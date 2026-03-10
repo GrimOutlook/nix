@@ -1,0 +1,9 @@
+[submodule "config"]
+	path = config
+	url = git@github.com:GrimOutlook/nix-config
+[submodule "hosts"]
+	path = hosts
+	url = git@github.com:GrimOutlook/nix-hosts
+[submodule "homelab"]
+	path = homelab
+	url = git@github.com:GrimOutlook/nix-homelab
