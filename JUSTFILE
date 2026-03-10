@@ -86,6 +86,7 @@ commit-host-update HOST:
 [group('git')]
 commit-hosts-update:
   git -C {{HOSTS}} commit -am "chore: Update flake.lock for hosts" && git push || true
+  git commit -am "chore: Update flake.lock for hosts" && git push || true
 
 # Push changes for all contained repos
 [group('git')]
