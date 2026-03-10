@@ -37,13 +37,15 @@ deploy-new HOST:
   nix run github:nix-community/nixos-anywhere -- \
   --flake ./{{HOSTS}}/{{HOST}}#{{HOST}} \
   root@{{HOST}}
+  just clear-keys {{HOST}}
 
 # Deploy homelab updates
 [group('deploy')]
 deploy-homelab-update:
   # TODO: Make this search for `homelab.url` in `hosts/` and run
   # `deploy-update` for every host that has it
-  just deploy-update newyork
+  #
+  # just deploy-update newyork
   just deploy-update washington
   just deploy-update london
 
