@@ -44,7 +44,7 @@ deploy HOST:
 deploy-update HOST:
   just update {{HOST}}
   just deploy {{HOST}}
-  just commit-update {{HOST}}
+  just commit-host-update {{HOST}}
 
 # Deploy a host for the first time
 [group('deploy')]
