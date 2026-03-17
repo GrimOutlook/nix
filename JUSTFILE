@@ -32,26 +32,26 @@ update-all:
 # Verify a host's config is valid
 # Deploy a host to it's hostname
 [group('deploy')]
-deploy HOST:
+deploy HOST ADDR="{{HOST}}":
   nh os switch \
-    --target-host root@{{HOST}} \
-    --build-host root@{{HOST}} \
+    --target-host root@{{ADDR}} \
+    --build-host root@{{ADDR}} \
     ./{{HOSTS}}/{{HOST}} -H {{HOST}}
 
 # Update a host and deploy it
 [group('deploy')]
 [group('update')]
-deploy-update HOST:
+deploy-update HOST ADDR="{{HOST}}":
   just update {{HOST}}
-  just deploy {{HOST}}
+  just deploy {{HOST}} {{ADDR}}
   just commit-host-update {{HOST}}
 
 # Deploy a host for the first time
 [group('deploy')]
-deploy-new HOST:
+deploy-new HOST ADDR="{{HOST}}":
   nix run github:nix-community/nixos-anywhere -- \
   --flake ./{{HOSTS}}/{{HOST}}#{{HOST}} \
-  root@{{HOST}}
+  root@{{ADDR}}
   just clear-keys {{HOST}}
 
 # Deploy homelab updates
