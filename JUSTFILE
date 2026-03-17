@@ -32,7 +32,7 @@ update-all:
 # Verify a host's config is valid
 # Deploy a host to it's hostname
 [group('deploy')]
-deploy HOST ADDR="{{HOST}}":
+deploy HOST ADDR=HOST:
   nh os switch \
     --target-host root@{{ADDR}} \
     --build-host root@{{ADDR}} \
@@ -41,14 +41,14 @@ deploy HOST ADDR="{{HOST}}":
 # Update a host and deploy it
 [group('deploy')]
 [group('update')]
-deploy-update HOST ADDR="{{HOST}}":
+deploy-update HOST ADDR=HOST:
   just update {{HOST}}
   just deploy {{HOST}} {{ADDR}}
   just commit-host-update {{HOST}}
 
 # Deploy a host for the first time
 [group('deploy')]
-deploy-new HOST ADDR="{{HOST}}":
+deploy-new HOST ADDR=HOST:
   nix run github:nix-community/nixos-anywhere -- \
   --flake ./{{HOSTS}}/{{HOST}}#{{HOST}} \
   root@{{ADDR}}
@@ -64,7 +64,6 @@ deploy-homelab-update:
   # just deploy-update newyork
   just deploy-update washington
   just deploy-update london
-
 
 # Connect to a host
 [group('ssh')]
