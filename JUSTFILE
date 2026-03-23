@@ -89,5 +89,11 @@ commit-hosts-update:
 
 # Push changes for all contained repos
 [group('git')]
-push-changes:
+push:
   git submodule foreach --recursive 'git send'
+
+# Pull changes for all contained repos
+[group('git')]
+pull:
+  git submodule foreach --recursive 'git pull origin main'
+  git submodule foreach --recursive 'git checkout main'
