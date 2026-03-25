@@ -31,6 +31,7 @@ organizational purposes. All hosts are stored in the [`nix-hosts`](https://githu
 | [london](https://github.com/GrimOutlook/nix-host-london) | Media Organizer |
 | [newyork](https://github.com/GrimOutlook/nix-host-newyork) | Software Router/Firewall |
 | [pyongyang](https://github.com/GrimOutlook/nix-host-pyongyang) | Non-public Service Host |
+| [svalbard](https://github.com/GrimOutlook/nix-host-svalbard) | Backups Host |
 | [washington](https://github.com/GrimOutlook/nix-host-washington) | Public Web Service Host |
 
 ### Hosts
