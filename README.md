@@ -4,15 +4,16 @@ A repo containing all of the main nix repos I use and change regularly.
 
 ## Anatomy
 
-### Config
+### [Config](https://github.com/GrimOutlook/nix-config)
 
 Contains all of the main modules that are pulled in by each host.
+A module is just a group of settings that are used by multiple hosts.
 
 The format is based on `dendritics` and the original repo I based it on was
 from @GaetanLepage. This layout is incredible for making configuration modular
 and I give huge credit to those who came up with it.
 
-### Homelab
+### [Homelab](https://github.com/GrimOutlook/nix-homelab)
 
 Configuration pulled in by homelab hosts so the configuration can be updated
 for all hosts at once.
@@ -34,7 +35,7 @@ organizational purposes. All hosts are stored in the [`nix-hosts`](https://githu
 | [svalbard](https://github.com/GrimOutlook/nix-host-svalbard) | Backups Host |
 | [washington](https://github.com/GrimOutlook/nix-host-washington) | Public Web Service Host |
 
-### Hosts
+### [Hosts](https://github.com/GrimOutlook/nix-hosts)
 
 Contains ***all*** of the repos for individual hosts, including homelab hosts.
 
