@@ -29,10 +29,11 @@ organizational purposes. All hosts are stored in the [`nix-hosts`](https://githu
 | Host | Summary |
 | --- | --- |
 | [dubai](https://github.com/GrimOutlook/nix-host-dubai) | Home Automation Host |
+| [dunkirk](https://github.com/GrimOutlook/nix-host-dunkirk) | Non-public Service Host |
 | [london](https://github.com/GrimOutlook/nix-host-london) | Media Organizer |
 | [newyork](https://github.com/GrimOutlook/nix-host-newyork) | Software Router/Firewall |
-| [pyongyang](https://github.com/GrimOutlook/nix-host-pyongyang) | Non-public Service Host |
-| [svalbard](https://github.com/GrimOutlook/nix-host-svalbard) | Backups Host |
+| [oslo](https://github.com/GrimOutlook/nix-host-oslo) | Local Backups Host |
+| [svalbard](https://github.com/GrimOutlook/nix-host-svalbard) | Remote Backups Host |
 | [washington](https://github.com/GrimOutlook/nix-host-washington) | Public Web Service Host |
 
 ### [Hosts](https://github.com/GrimOutlook/nix-hosts)
