@@ -28,6 +28,7 @@ organizational purposes. All hosts are stored in the [`nix-hosts`](https://githu
 
 | Host | Summary |
 | --- | --- |
+| [amsterdam](https://github.com/GrimOutlook/nix-host-amsterdam) | Public Web Service Host |
 | [dubai](https://github.com/GrimOutlook/nix-host-dubai) | Home Automation Host |
 | [dunkirk](https://github.com/GrimOutlook/nix-host-dunkirk) | Non-public Service Host |
 | [london](https://github.com/GrimOutlook/nix-host-london) | Media Organizer |
@@ -46,6 +47,7 @@ Contains ***all*** of the repos for individual hosts, including homelab hosts.
 | --- | --- |
 | [berlin](https://github.com/GrimOutlook/nix-host-berlin) | Desktop (Nix Boot)|
 | [belfast](https://github.com/GrimOutlook/nix-host-belfast) | Desktop (Windows Boot) WSL |
+| [macao](https://github.com/GrimOutlook/nix-host-macao) | Living Room Gaming PC |
 | [paris](https://github.com/GrimOutlook/nix-host-paris) | Laptop (Nix Boot) |
 | [taipei](https://github.com/GrimOutlook/nix-host-taipei) | Laptop (Windows Boot) WSL |
 
