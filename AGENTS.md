@@ -62,9 +62,9 @@ numbers/subdomains/public-exposure flags), consumed by hosts via the
 auto-assignment and lookup helpers; `modules/ssh_config.nix` generates SSH
 host entries for home-manager.
 
-`homelab/JUSTFILE` has per-host `mod` targets (berlin, dubai, dunkirk,
-london, newyork, paris, washington) plus `update-homelab*` recipes that fan
-out `deploy-update` across service/networking/client hosts.
+`homelab/JUSTFILE` has per-host `mod` targets (berlin, dubai, london,
+newyork, paris, washington) plus `update-homelab*` recipes that fan out
+`deploy-update` across service/networking/client hosts.
 
 **Note:** `homelab/hosts.nix` in this checkout can lag its own `origin/main`
 (submodule pointers aren't always bumped promptly) — if a host's expected
@@ -77,8 +77,6 @@ HEAD..origin/main` before assuming it doesn't exist upstream.
 | --- | --- | --- | --- |
 | amsterdam | server | Public web service host / hypervisor (plex) | Runs the `vikunja` and `london` MicroVMs via microvm.nix — see `hosts/amsterdam/README.md` and `modules/vms/` |
 | berlin | desktop | Personal desktop (Nix boot) | |
-| belfast | wsl | Desktop (Windows boot) WSL | |
-| dunkirk | server | Non-public service host (frigate cameras currently all disabled, paperless-ngx) | homelab entry currently commented out in `hosts.nix` |
 | london | *(removed)* | Was a physical media downloader; the `hosts/london` submodule was **removed**. Recreated as a VPN-isolated podman/Buildarr MicroVM on **amsterdam** (`hosts/amsterdam/modules/vms/london/`). Its `homelab.hosts.london` entry is kept — the VM reads its service ports from there. |
 | macao | desktop | Living-room gaming PC / "Steam Machine" | uses its own `.just/` justfile modules |
 | newyork | server | Router/firewall (dnsmasq, ddclient, glance, vnstat) | homelab gateway host |
@@ -86,7 +84,6 @@ HEAD..origin/main` before assuming it doesn't exist upstream.
 | paris | laptop | Personal laptop (Nix boot) | |
 | pyongyang | server | Security NVR (frigate, active cameras: front-door, driveway, back-gate; Coral TPU; ZFS raidz3 pool) | `arm build` + `network-diag` enabled |
 | svalbard | server | Remote backups host | pulls shared config via `nix-backup-host` flake |
-| taipei | wsl | Laptop (Windows boot) WSL | |
 | washington | server | Public web service host (plex, vaultwarden) | |
 | dubai | (planned) | Home automation (home-assistant) | defined in `homelab/hosts.nix` upstream; no `hosts/dubai` directory yet |
 
