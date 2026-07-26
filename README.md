@@ -30,7 +30,6 @@ organizational purposes. All hosts are stored in the [`nix-hosts`](https://githu
 | --- | --- |
 | [amsterdam](https://github.com/GrimOutlook/nix-host-amsterdam) | Public Web Service Host |
 | [dubai](https://github.com/GrimOutlook/nix-host-dubai) | Home Automation Host |
-| [dunkirk](https://github.com/GrimOutlook/nix-host-dunkirk) | Non-public Service Host |
 | [london](https://github.com/GrimOutlook/nix-host-london) | Media Organizer |
 | [newyork](https://github.com/GrimOutlook/nix-host-newyork) | Software Router/Firewall |
 | [oslo](https://github.com/GrimOutlook/nix-host-oslo) | Local Backups Host |
@@ -47,10 +46,8 @@ Contains ***all*** of the repos for individual hosts, including homelab hosts.
 | Host | Summary |
 | --- | --- |
 | [berlin](https://github.com/GrimOutlook/nix-host-berlin) | Desktop (Nix Boot)|
-| [belfast](https://github.com/GrimOutlook/nix-host-belfast) | Desktop (Windows Boot) WSL |
 | [macao](https://github.com/GrimOutlook/nix-host-macao) | Living Room Gaming PC |
 | [paris](https://github.com/GrimOutlook/nix-host-paris) | Laptop (Nix Boot) |
-| [taipei](https://github.com/GrimOutlook/nix-host-taipei) | Laptop (Windows Boot) WSL |
 
 ## Resources
 - [NixOS Packages/Options](https://search.nixos.org/packages?channel=25.11)
