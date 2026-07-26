@@ -75,11 +75,11 @@ HEAD..origin/main` before assuming it doesn't exist upstream.
 
 | Host | Type | Purpose | Notes |
 | --- | --- | --- | --- |
-| amsterdam | server | Public web service host / hypervisor | |
+| amsterdam | server | Public web service host / hypervisor (plex) | Runs the `vikunja` and `london` MicroVMs via microvm.nix — see `hosts/amsterdam/README.md` and `modules/vms/` |
 | berlin | desktop | Personal desktop (Nix boot) | |
 | belfast | wsl | Desktop (Windows boot) WSL | |
 | dunkirk | server | Non-public service host (frigate cameras currently all disabled, paperless-ngx) | homelab entry currently commented out in `hosts.nix` |
-| london | server | Media downloader (radarr/sonarr/prowlarr/transmission) | |
+| london | *(removed)* | Was a physical media downloader; the `hosts/london` submodule was **removed**. Recreated as a VPN-isolated podman/Buildarr MicroVM on **amsterdam** (`hosts/amsterdam/modules/vms/london/`). Its `homelab.hosts.london` entry is kept — the VM reads its service ports from there. |
 | macao | desktop | Living-room gaming PC / "Steam Machine" | uses its own `.just/` justfile modules |
 | newyork | server | Router/firewall (dnsmasq, ddclient, glance, vnstat) | homelab gateway host |
 | oslo | server | Local backups host | pulls shared config via `nix-backup-host` flake |
@@ -104,3 +104,25 @@ HEAD..origin/main` before assuming it doesn't exist upstream.
 - Per-host READMEs occasionally get copy-pasted from another host when
   scaffolding a new one and not updated — cross-check a host's README against
   its actual `modules/`/`services/` before trusting it.
+- **`nix-config` is a flake input (from GitHub), not the `config/` submodule,
+  at build time.** Hosts pin it in their own `flake.lock`. So a change to
+  shared config only reaches hosts after you commit **and push** `nix-config`,
+  then `cd hosts && just update-homelab-flakes nix-config` (bumps each host's
+  input + redeploys). Editing `config/` + bumping the superproject pointer
+  alone does nothing to a host build.
+- **Pushing spans nested submodules** — push **leaves first**
+  (`hosts/<host>`), then `hosts`, then the superproject, so parent pointer
+  bumps reference already-pushed commits. `git push` is fast-forward-only, so a
+  wrong order just fails safely.
+- **amsterdam builds Vikunja from a local fork** (`~/projects/vikunja`, a
+  `git+file://` input whose `origin` is upstream go-vikunja — keep its commits
+  local, don't push). A nixpkgs bump that changes pnpm or Go invalidates the
+  two pinned FOD hashes in that fork's `flake.nix` (the frontend `pnpm-deps`
+  `hash` and the Go `vendorHash`); the amsterdam build then fails with "hash
+  mismatch". Fix: set each to the reported `got:` value, commit in the fork,
+  then `nix flake update vikunja` in `hosts/amsterdam`.
+- **SSH root login is local-networks-only** (see `nix-config`
+  `capabilities/core/ssh-server.nix`): global `PermitRootLogin no` + a
+  `Match Address` for RFC1918/loopback → key-only. So `root@` deploys must
+  originate from a LAN/VPN source IP; `grim@` works from anywhere. `newyork`'s
+  sshd is on **port 49999** (22 is a reject tar pit).
