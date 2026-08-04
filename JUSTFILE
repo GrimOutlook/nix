@@ -95,5 +95,5 @@ push:
 # Pull changes for all contained repos
 [group('git')]
 pull:
-  git submodule foreach --recursive 'git checkout main'
-  git submodule foreach --recursive 'git pull origin main'
+  git checkout main && git pull origin main && echo
+  git submodule foreach --recursive 'git checkout main && git pull origin main && echo'
