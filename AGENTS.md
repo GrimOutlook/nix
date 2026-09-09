@@ -82,7 +82,7 @@ HEAD..origin/main` before assuming it doesn't exist upstream.
 | newyork | server | Router/firewall (dnsmasq, ddclient, glance, vnstat) | homelab gateway host |
 | oslo | server | Local backups host | pulls shared config via `nix-backup-host` flake |
 | paris | laptop | Personal laptop (Nix boot) | |
-| pyongyang | server | Security NVR (frigate, active cameras: front-door, driveway, back-gate; Coral TPU; ZFS raidz3 pool) | `arm build` + `network-diag` enabled |
+| dunkirk | server | Security NVR (frigate, active cameras: front-door, driveway, back-gate; Coral TPU; ZFS raidz3 pool) | `arm build` + `network-diag` enabled |
 | svalbard | server | Remote backups host | pulls shared config via `nix-backup-host` flake |
 | washington | server | Public web service host (plex, vaultwarden) | |
 | dubai | (planned) | Home automation (home-assistant) | defined in `homelab/hosts.nix` upstream; no `hosts/dubai` directory yet |
@@ -97,7 +97,7 @@ HEAD..origin/main` before assuming it doesn't exist upstream.
   or `host.<capability>.enable` to see what a given host actually turns on,
   rather than inferring from file presence alone.
 - Secrets are managed with `agenix` (see `*/secrets/*.age` + `secrets.nix`
-  per host, e.g. `hosts/pyongyang/secrets/`).
+  per host, e.g. `hosts/dunkirk/secrets/`).
 - Per-host READMEs occasionally get copy-pasted from another host when
   scaffolding a new one and not updated — cross-check a host's README against
   its actual `modules/`/`services/` before trusting it.
