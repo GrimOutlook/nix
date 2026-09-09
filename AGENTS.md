@@ -111,13 +111,12 @@ HEAD..origin/main` before assuming it doesn't exist upstream.
   (`hosts/<host>`), then `hosts`, then the superproject, so parent pointer
   bumps reference already-pushed commits. `git push` is fast-forward-only, so a
   wrong order just fails safely.
-- **amsterdam builds Vikunja from a local fork** (`~/projects/vikunja`, a
-  `git+file://` input whose `origin` is upstream go-vikunja — keep its commits
-  local, don't push). A nixpkgs bump that changes pnpm or Go invalidates the
-  two pinned FOD hashes in that fork's `flake.nix` (the frontend `pnpm-deps`
-  `hash` and the Go `vendorHash`); the amsterdam build then fails with "hash
-  mismatch". Fix: set each to the reported `got:` value, commit in the fork,
-  then `nix flake update vikunja` in `hosts/amsterdam`.
+- **amsterdam builds Vikunja from the `GrimOutlook/vikunja` GitHub fork** (a
+  `git+https://` input). A nixpkgs bump that changes pnpm or Go invalidates the
+  two pinned FOD hashes in that repository's `flake.nix` (the frontend
+  `pnpm-deps` `hash` and the Go `vendorHash`); the amsterdam build then fails
+  with "hash mismatch". Fix: set each to the reported `got:` value, commit and
+  push the fork, then `nix flake update vikunja` in `hosts/amsterdam`.
 - **SSH root login is local-networks-only** (see `nix-config`
   `capabilities/core/ssh-server.nix`): global `PermitRootLogin no` + a
   `Match Address` for RFC1918/loopback → key-only. So `root@` deploys must
