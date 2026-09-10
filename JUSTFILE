@@ -13,21 +13,21 @@ check HOST:
 # Update the `flake.lock` of a host
 [group('update')]
 update HOST:
-  git -C {{HOSTS}} submodule update --recursive {{HOST}}
+  git -C {{HOSTS}} submodule update --remote --merge --recursive {{HOST}}
   nix flake update --flake ./{{HOSTS}}/{{HOST}}
 
 # Uodate all hosts in the hosts/ directory
 [group('update')]
 update-all:
   #!/usr/bin/env bash
-  git -C {{HOSTS}} submodule update --recursive
   for host_dir in ./hosts/*/; do \
     host="$(basename $host_dir)"
     just update $host
     just commit-host-update $host
+    sleep 3
   done
   just commit-hosts-update
-  just push-changes
+  just push
 
 # Verify a host's config is valid
 # Deploy a host to it's hostname
