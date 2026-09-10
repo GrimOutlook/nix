@@ -13,14 +13,14 @@ check HOST:
 # Update the `flake.lock` of a host
 [group('update')]
 update HOST:
-  git -C {{HOSTS}} submodule update --recursive {{HOST}}
+  git -C {{HOSTS}} submodule update --remote --merge --recursive {{HOST}}
   nix flake update --flake ./{{HOSTS}}/{{HOST}}
 
 # Uodate all hosts in the hosts/ directory
 [group('update')]
 update-all:
   #!/usr/bin/env bash
-  git -C {{HOSTS}} submodule update --recursive
+  git -C {{HOSTS}} submodule update --remote --merge --recursive
   for host_dir in ./hosts/*/; do \
     host="$(basename $host_dir)"
     just update $host
