@@ -34,6 +34,7 @@ update-all:
 [group('deploy')]
 deploy HOST ADDR=HOST:
   nh os switch \
+    --keep-going \
     --target-host root@{{ADDR}} \
     --build-host root@{{ADDR}} \
     ./{{HOSTS}}/{{HOST}} -H {{HOST}}
