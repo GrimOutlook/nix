@@ -35,8 +35,8 @@ update-all:
 deploy HOST ADDR=HOST:
   nh os switch \
     --keep-going \
-    --target-host root@{{ADDR}} \
-    --build-host root@{{ADDR}} \
+    --target-host grim@{{ADDR}} \
+    --build-host grim@{{ADDR}} \
     ./{{HOSTS}}/{{HOST}} -H {{HOST}}
 
 # Update a host and deploy it
@@ -69,7 +69,7 @@ deploy-homelab-update:
 # Connect to a host
 [group('ssh')]
 connect HOST:
-  ssh root@{{HOST}}
+  ssh grim@{{HOST}}
 
 # Clear `.known_hosts` entries for host
 [group('ssh')]

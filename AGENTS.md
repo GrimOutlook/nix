@@ -117,8 +117,9 @@ HEAD..origin/main` before assuming it doesn't exist upstream.
   `pnpm-deps` `hash` and the Go `vendorHash`); the amsterdam build then fails
   with "hash mismatch". Fix: set each to the reported `got:` value, commit and
   push the fork, then `nix flake update vikunja` in `hosts/amsterdam`.
-- **SSH root login is local-networks-only** (see `nix-config`
-  `capabilities/core/ssh-server.nix`): global `PermitRootLogin no` + a
-  `Match Address` for RFC1918/loopback → key-only. So `root@` deploys must
-  originate from a LAN/VPN source IP; `grim@` works from anywhere. `newyork`'s
-  sshd is on **port 49999** (22 is a reject tar pit).
+- **SSH root login is disabled** (see `nix-config`
+  `capabilities/core/ssh-server.nix`). Fleet deployment uses the restricted
+  `deploy` account and root only for the NixOS system profile via limited
+  NOPASSWD sudo-rs. Bootstrap a host over its existing root/admin path before
+  applying this configuration. `newyork`'s sshd is on **port 49999** (22 is a
+  reject tar pit).

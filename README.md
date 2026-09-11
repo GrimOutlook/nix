@@ -109,7 +109,7 @@ just update HOST             # Update one host's flake inputs
 just deploy HOST [ADDR]      # Deploy with nh over SSH
 just deploy-update HOST      # Update and deploy one host
 just deploy-new HOST [ADDR]  # First install with nixos-anywhere
-just connect HOST            # Open an SSH session as root
+just connect HOST            # Open an SSH session as grim
 ```
 
 The `just deploy` recipes are the older direct `nh os switch` path. For
@@ -132,25 +132,35 @@ unrelated work in progress.
 ### Supported Entry Point
 
 Use the fleet aggregator in `hosts/`. It defines a `system` profile running as
-`root`, with deploy-rs magic rollback and automatic rollback enabled.
+`root`, with deploy-rs magic rollback and automatic rollback enabled. SSH
+connects as the restricted `deploy` user from private LAN/VPN addresses;
+passwordless sudo-rs is limited to the deploy-rs activation and rollback
+commands through a fixed validation bridge.
+
+The deployment-client option is enabled by default, but the private key is
+installed only on hosts with `host.dev.enable` (currently Berlin and Paris).
+The first rollout must therefore use each host's existing root or console
+access once; that generation creates the `deploy` account before root SSH is
+disabled.
 
 The deploy-rs executable should come from nixpkgs, where it is available from
 the binary cache:
 
 ```sh
+# On Berlin or Paris, after the host has received the agenix secret
+ssh-add /run/agenix/nix-deploy-key
+
 # From the top-level repository
-nix run nixpkgs#deploy-rs -- ./hosts#newyork
+nix run ./hosts -- .#newyork
 
 # Equivalent, from inside the fleet aggregator
 cd hosts
-nix run nixpkgs#deploy-rs -- .#newyork
+nix run . -- .#newyork
 ```
 
-Do not use `nix run github:serokell/deploy-rs` for this checkout. The upstream
-flake's package currently tries to build dependencies through a crates.io API
-endpoint that returns HTTP 403. The fleet flake still uses the deploy-rs
-activation library, but deliberately takes the deploy-rs executable from
-nixpkgs.
+Do not invoke the deploy-rs binary directly for this checkout. The fleet
+wrapper runs the cached nixpkgs deploy-rs executable with the `deploy` SSH
+user; the encrypted key is unlocked once in `ssh-agent`.
 
 ### Nodes
 
@@ -164,7 +174,7 @@ amsterdam  berlin  dubai  dunkirk  macao  newyork  oslo  svalbard  washington
 which deployments are normally driven. Rebuild it locally instead:
 
 ```sh
-sudo nixos-rebuild switch --flake ./hosts/paris#paris
+run0 nixos-rebuild switch --flake ./hosts/paris#paris
 ```
 
 The default build behavior is remote build on the target followed by remote
@@ -183,16 +193,18 @@ the host revision already pinned there:
 cd hosts
 nix flake update newyork
 nix flake check --no-build --no-write-lock-file
-nix run nixpkgs#deploy-rs -- --dry-activate .#newyork
-nix run nixpkgs#deploy-rs -- .#newyork
+nix run . -- --dry-activate .#newyork
+nix run . -- .#newyork
 ```
 
 Replace `newyork` with any supported node. Use `--targets` to deploy more than
 one node in one invocation:
 
 ```sh
-nix run nixpkgs#deploy-rs -- --targets .#newyork .#svalbard
+nix run . -- --targets .#newyork .#svalbard
 ```
+
+Use `nix run . -- .` to deploy every enabled fleet node in one invocation.
 
 `--dry-activate` builds and reports the activation without applying it.
 deploy-rs also supports `--boot` when the next generation should be selected
@@ -205,8 +217,8 @@ on reboot without switching immediately.
 - Confirmation timeout is 120 seconds for `newyork` and `svalbard`, and 30
   seconds for the other nodes.
 - Verify configured SSH access to the target before deploying. The fleet uses
-  root for both SSH and the system profile, so the deployer needs root key
-  access.
+  `deploy` for SSH and `root` only for the NixOS system profile, so the deploy
+  key must be loaded in `ssh-agent`.
 
 If schema or check evaluation fails because a required package is not yet in
 the local store, allow Nix to substitute or build it and rerun the checks. Use
