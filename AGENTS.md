@@ -80,10 +80,10 @@ HEAD..origin/main` before assuming it doesn't exist upstream.
 | london | *(removed)* | Was a physical media downloader; the `hosts/london` submodule was **removed**. Recreated as a VPN-isolated podman/Buildarr MicroVM on **amsterdam** (`hosts/amsterdam/modules/vms/london/`). Its `homelab.hosts.london` entry is kept — the VM reads its service ports from there. |
 | macao | desktop | Living-room gaming PC / "Steam Machine" | uses its own `.just/` justfile modules |
 | newyork | server | Router/firewall (dnsmasq, ddclient, glance, vnstat) | homelab gateway host |
-| oslo | server | Local backups host | pulls shared config via `nix-backup-host` flake |
+| oslo | server | Local backups host | enables `nix-config`'s `host.backup` capability |
 | paris | laptop | Personal laptop (Nix boot) | |
 | dunkirk | server | Security NVR (frigate, active cameras: front-door, driveway, back-gate; Coral TPU; ZFS raidz3 pool) | `arm build` + `network-diag` enabled |
-| svalbard | server | Remote backups host | pulls shared config via `nix-backup-host` flake |
+| svalbard | server | Remote backups host | enables `nix-config`'s `host.backup` capability |
 | washington | server | Public web service host (plex, vaultwarden) | |
 | dubai | (planned) | Home automation (home-assistant) | defined in `homelab/hosts.nix` upstream; no `hosts/dubai` directory yet |
 
