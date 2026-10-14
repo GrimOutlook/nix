@@ -4,6 +4,17 @@ Quick orientation for agents working in this repo. This top-level repo is just
 a wrapper: it holds no Nix config of its own and exists to check out three
 independent git submodules together and drive them with a shared `JUSTFILE`.
 
+## Public/private split evaluation branch
+
+On `eval/public-private-split`, `config/` contains public host profiles and
+parameterized service implementations, and `homelab/` is the private site
+repository assembling the real fleet. `hosts/` and its submodules remain intact
+as the legacy comparison baseline. Use `just eval-host HOST` or `just eval-fleet`
+for the new layout; these include untracked files and override `nix-config` with
+the adjacent checkout, without activation or pushing. See
+`config/PUBLIC_PRIVATE_SPLIT.md` and `homelab/SITE_SPLIT.md`. The remainder of this
+document describes the legacy layout.
+
 ## Layout
 
 ```
@@ -58,8 +69,8 @@ Single source of truth for the home network: `hosts.nix` declares every
 homelab-relevant host (IP/MAC, and the services it runs with port
 numbers/subdomains/public-exposure flags), consumed by hosts via the
 `homelab` flake input (e.g. `homelab.hosts.<name>.services.<svc>.ports.*`).
-`modules/lib.nix` and `modules/helpers.nix` provide the IP/port
-auto-assignment and lookup helpers; `modules/ssh_config.nix` generates SSH
+`config/homelab/lib.nix` provides the network lookup helpers; every service port
+is declared explicitly in `homelab/hosts.nix`. `modules/ssh_config.nix` generates SSH
 host entries for home-manager.
 
 `homelab/JUSTFILE` has per-host `mod` targets (berlin, dubai, london,

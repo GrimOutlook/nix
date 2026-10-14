@@ -7,6 +7,14 @@ HOSTS := "hosts"
 default:
   just --list
 
+[group('evaluation')]
+eval-host HOST:
+  just --justfile homelab/JUSTFILE eval-host {{HOST}}
+
+[group('evaluation')]
+eval-fleet:
+  just --justfile homelab/JUSTFILE eval-fleet
+
 check HOST:
   nix flake check ./{{HOSTS}}/{{HOST}}
 
