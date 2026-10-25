@@ -6,6 +6,17 @@ independent git submodules together and drive them with a shared `JUSTFILE`.
 
 ## Layout
 
+### Public/private split
+
+The public/private split is merged on both submodules' `main` branches. The
+active fleet is `homelab/flake.nix` and `homelab/fleet.nix`, with one private lockfile.
+Public profiles live in `config/hosts/`; private hardware/site modules live in
+`homelab/hosts/`. `hosts/` is the legacy comparison checkout and can contain
+uncommitted work. Use top-level `just eval-host`, `eval-fleet`, `build-host`, and
+`deploy`, which route to the consolidated site. Local evaluation/build uses an
+adjacent config override; deployment uses the published locked input. Consult
+`config/PUBLIC_PRIVATE_SPLIT.md` before publication or activation.
+
 ```
 .
 ├── config/    -> git@github.com:GrimOutlook/nix-config   (submodule, branch main)
@@ -29,9 +40,9 @@ import lists to maintain.
 - `flake/` — flake-parts glue: `modules.nix` wires up `capabilities/` +
   `host-types/` into `nixosModules.default`; `host.nix` defines the `host.*`
   option namespace; `devshell.nix` defines `just`-like devshell commands
-  (`update`, `switch`, `unlink-results`); `deploy-rs.nix` wires deploy-rs
-  (currently broken — see FIXME in that file); `systems.nix` lists supported
-  systems.
+  (`update`, `switch`, `unlink-results`); `deploy-rs.nix` provides the deployment
+  tool, while `lib.mkFleetDeploy` assembles private nodes; `systems.nix` lists
+  supported systems.
 - `capabilities/` — reusable, composable feature modules grouped by domain:
   `core` (applies to every host: users, nix settings, ssh, networking, agenix,
   etc.), `dev`, `graphical`, `misc`, `network-diag`, `virtualization`. Each
@@ -101,12 +112,10 @@ HEAD..origin/main` before assuming it doesn't exist upstream.
 - Per-host READMEs occasionally get copy-pasted from another host when
   scaffolding a new one and not updated — cross-check a host's README against
   its actual `modules/`/`services/` before trusting it.
-- **`nix-config` is a flake input (from GitHub), not the `config/` submodule,
-  at build time.** Hosts pin it in their own `flake.lock`. So a change to
-  shared config only reaches hosts after you commit **and push** `nix-config`,
-  then `cd hosts && just update-homelab-flakes nix-config` (bumps each host's
-  input + redeploys). Editing `config/` + bumping the superproject pointer
-  alone does nothing to a host build.
+- **Deployment uses homelab's published `nix-config` input.** Publish config,
+  then run `just --justfile homelab/JUSTFILE update nix-config`, review the
+  consolidated lock, and publish homelab before deployment. Local evaluation
+  and `build-host` deliberately override it with adjacent `config/` changes.
 - **Pushing spans nested submodules** — push **leaves first**
   (`hosts/<host>`), then `hosts`, then the superproject, so parent pointer
   bumps reference already-pushed commits. `git push` is fast-forward-only, so a

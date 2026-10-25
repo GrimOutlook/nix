@@ -1,5 +1,42 @@
 # Nix
 
+## Public/private split workflow
+
+The split is merged on both submodules' `main` branches. `config/` contains public
+modules and reviewed host profiles, and `homelab/` contains private inventory,
+hardware, secrets, host composition and the single fleet lockfile. `hosts/` is
+the legacy checkout retained for comparison and unfinished local work.
+
+Use these commands from the wrapper:
+
+```sh
+just eval-host berlin         # Evaluate with adjacent unpublished config
+just eval-fleet               # Evaluate ten systems, one process per host
+just --justfile homelab/JUSTFILE eval-installer
+just build-host berlin        # Build with adjacent config, without activation
+just update-all               # Update the consolidated fleet lockfile
+just deploy newyork           # Deploy the published locked fleet as deploy
+just deploy-new HOST [ADDR]   # Install from homelab's consolidated flake
+```
+
+`just update HOST` is a compatibility entry point that updates the shared fleet
+lockfile; dependencies are no longer pinned separately for each host.
+For a targeted input update, use `just --justfile homelab/JUSTFILE update INPUT`.
+Review updates before deployment. Deployment intentionally uses the published
+lockfile rather than the local config override used by evaluation/build recipes.
+Paris remains a local rebuild: `sudo nixos-rebuild switch --flake ./homelab#paris`.
+
+Publish config first, update homelab's config input, then publish homelab and
+update the wrapper pointers. Homelab now pins the merged config main revision,
+with no evaluation-branch URL or local path input in its lockfile. See
+[`config/PUBLIC_PRIVATE_SPLIT.md`](./config/PUBLIC_PRIVATE_SPLIT.md) and
+[`homelab/SITE_SPLIT.md`](./homelab/SITE_SPLIT.md) for migration gates.
+
+## Legacy layout and workflows
+
+The sections below describe the pre-split checkout for comparison. Use the
+workflow above for the consolidated fleet.
+
 This is an umbrella checkout for the NixOS configuration used across the
 fleet. It is not itself a Nix flake. The actual flakes live in the three Git
 submodules below, each with its own repository, history, lock file, and remote.

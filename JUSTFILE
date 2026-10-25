@@ -8,36 +8,31 @@ default:
   just --list
 
 check HOST:
-  nix flake check ./{{HOSTS}}/{{HOST}}
+  just --justfile homelab/JUSTFILE eval-host {{HOST}}
 
-# Update the `flake.lock` of a host
+eval-host HOST:
+  just --justfile homelab/JUSTFILE eval-host {{HOST}}
+
+eval-fleet:
+  just --justfile homelab/JUSTFILE eval-fleet
+
+build-host HOST:
+  just --justfile homelab/JUSTFILE build-host {{HOST}}
+
+# Compatibility entry point: update the consolidated fleet lockfile.
 [group('update')]
 update HOST:
-  git -C {{HOSTS}} submodule update --remote --merge --recursive {{HOST}}
-  nix flake update --flake ./{{HOSTS}}/{{HOST}}
+  just --justfile homelab/JUSTFILE update
 
-# Uodate all hosts in the hosts/ directory
+# Update the consolidated fleet's dependencies.
 [group('update')]
 update-all:
-  #!/usr/bin/env bash
-  for host_dir in ./hosts/*/; do \
-    host="$(basename $host_dir)"
-    just update $host
-    just commit-host-update $host
-    sleep 3
-  done
-  just commit-hosts-update
-  just push
+  just --justfile homelab/JUSTFILE update
 
-# Verify a host's config is valid
-# Deploy a host to it's hostname
+# Deploy a host from the consolidated fleet to its hostname.
 [group('deploy')]
 deploy HOST ADDR=HOST:
-  nh os switch \
-    --keep-going \
-    --target-host grim@{{ADDR}} \
-    --build-host grim@{{ADDR}} \
-    ./{{HOSTS}}/{{HOST}} -H {{HOST}}
+  just --justfile homelab/JUSTFILE deploy {{HOST}} {{ADDR}}
 
 # Update a host and deploy it
 [group('deploy')]
@@ -45,13 +40,12 @@ deploy HOST ADDR=HOST:
 deploy-update HOST ADDR=HOST:
   just update {{HOST}}
   just deploy {{HOST}} {{ADDR}}
-  just commit-host-update {{HOST}}
 
 # Deploy a host for the first time
 [group('deploy')]
 deploy-new HOST ADDR=HOST:
   nix run github:nix-community/nixos-anywhere -- \
-  --flake ./{{HOSTS}}/{{HOST}}#{{HOST}} \
+  --flake ./homelab#{{HOST}} \
   root@{{ADDR}}
   just clear-keys {{HOST}}
 
@@ -59,12 +53,8 @@ deploy-new HOST ADDR=HOST:
 [group('deploy')]
 [group('update')]
 deploy-homelab-update:
-  # TODO: Make this search for `homelab.url` in `hosts/` and run
-  # `deploy-update` for every host that has it
-  #
-  # just deploy-update newyork
-  just deploy-update washington
-  just deploy-update london
+  just --justfile homelab/JUSTFILE update
+  nix run ./homelab#deploy-fleet -- ./homelab
 
 # Connect to a host
 [group('ssh')]
