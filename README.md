@@ -11,8 +11,7 @@ Use these commands from the wrapper:
 
 ```sh
 just eval-host berlin         # Evaluate with adjacent unpublished config
-just eval-fleet               # Evaluate ten systems, one process per host
-just --justfile homelab/JUSTFILE eval-installer
+just eval-fleet               # Evaluate nine systems, one process per host
 just build-host berlin        # Build with adjacent config, without activation
 just update-all               # Update the consolidated fleet lockfile
 just deploy newyork           # Deploy the published locked fleet as deploy
@@ -117,7 +116,6 @@ These are the host flakes currently present in `hosts/`:
 | --- | --- | --- |
 | [amsterdam](./hosts/amsterdam/) | Server | Public services, Plex, and the MicroVM host for Vikunja and `london` |
 | [berlin](./hosts/berlin/) | Desktop | Personal desktop, booted with NixOS |
-| [dubai](./hosts/dubai/) | Raspberry Pi 5 | Home Assistant and homelab automation |
 | [dunkirk](./hosts/dunkirk/) | Server | Frigate security NVR with Coral TPU and ZFS |
 | [macao](./hosts/macao/) | Desktop | Living-room gaming PC / Steam Machine |
 | [newyork](./hosts/newyork/) | Server | Homelab infrastructure host |
@@ -204,7 +202,7 @@ user; the encrypted key is unlocked once in `ssh-agent`.
 The fleet aggregator currently exposes these deploy-rs nodes:
 
 ```text
-amsterdam  berlin  dubai  dunkirk  macao  newyork  oslo  svalbard  washington
+amsterdam  berlin  dunkirk  macao  newyork  oslo  svalbard  washington
 ```
 
 `paris` is intentionally not a deploy-rs node because it is the laptop from
@@ -216,9 +214,7 @@ run0 nixos-rebuild switch --flake ./hosts/paris#paris
 
 The default build behavior is remote build on the target followed by remote
 activation. `newyork` is the only exception: it sets `remoteBuild = false`
-because the router is not powerful enough to be a useful build host. `dubai`
-also builds remotely by default, which lets the aarch64 Pi build its own system
-instead of requiring cross-compilation or emulation on the workstation.
+because the router is not powerful enough to be a useful build host.
 
 ### Safe Deployment Sequence
 

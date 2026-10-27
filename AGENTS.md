@@ -73,9 +73,8 @@ numbers/subdomains/public-exposure flags), consumed by hosts via the
 auto-assignment and lookup helpers; `modules/ssh_config.nix` generates SSH
 host entries for home-manager.
 
-`homelab/JUSTFILE` has per-host `mod` targets (berlin, dubai, london,
-newyork, paris, washington) plus `update-homelab*` recipes that fan out
-`deploy-update` across service/networking/client hosts.
+`homelab/JUSTFILE` provides the consolidated update, evaluation, build, and
+deployment recipes for the managed fleet.
 
 **Note:** `homelab/hosts.nix` in this checkout can lag its own `origin/main`
 (submodule pointers aren't always bumped promptly) — if a host's expected
@@ -96,7 +95,10 @@ HEAD..origin/main` before assuming it doesn't exist upstream.
 | dunkirk | server | Security NVR (frigate, active cameras: front-door, driveway, back-gate; Coral TPU; ZFS raidz3 pool) | `arm build` + `network-diag` enabled |
 | svalbard | server | Remote backups host | enables `nix-config`'s `host.backup` capability |
 | washington | server | Public web service host (plex, vaultwarden) | |
-| dubai | (planned) | Home automation (home-assistant) | defined in `homelab/hosts.nix` upstream; no `hosts/dubai` directory yet |
+
+Dubai is maintained externally and is excluded from the active fleet, inventory,
+public profiles, installer targets, monitoring targets, and secret recipient rules.
+Its old checkout under `hosts/` is legacy comparison material, not a managed host.
 
 ## Conventions / gotchas
 
