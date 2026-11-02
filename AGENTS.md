@@ -1,136 +1,43 @@
 # AGENTS.md
 
-Quick orientation for agents working in this repo. This top-level repo is just
-a wrapper: it holds no Nix config of its own and exists to check out three
-independent git submodules together and drive them with a shared `JUSTFILE`.
+This repository is a wrapper for two independent Git submodules and a shared
+`JUSTFILE`; it contains no Nix configuration of its own.
 
 ## Layout
 
-### Public/private split
+- `config/` — `GrimOutlook/nix-config`: public NixOS/Home Manager modules and
+  host profiles. The dendritic module tree uses `import-tree`; features are
+  enabled through `host.<capability>.enable` and `host.type.<type>.enable`.
+- `homelab/` — `GrimOutlook/nix-homelab`: private inventory, hardware, secrets,
+  host composition, and a single fleet lockfile. The active fleet is defined in
+  `homelab/flake.nix` and `homelab/fleet.nix`.
+- `JUSTFILE` — shared evaluation, build, update, deploy, SSH, and Git helpers.
 
-The public/private split is merged on both submodules' `main` branches. The
-active fleet is `homelab/flake.nix` and `homelab/fleet.nix`, with one private lockfile.
 Public profiles live in `config/hosts/`; private hardware/site modules live in
-`homelab/hosts/`. `hosts/` is the legacy comparison checkout and can contain
-uncommitted work. Use top-level `just eval-host`, `eval-fleet`, `build-host`, and
-`deploy`, which route to the consolidated site. Local evaluation/build uses an
-adjacent config override; deployment uses the published locked input. Consult
-`config/PUBLIC_PRIVATE_SPLIT.md` before publication or activation.
+`homelab/hosts/`. The legacy top-level `hosts/` submodule has been removed.
 
-```
-.
-├── config/    -> git@github.com:GrimOutlook/nix-config   (submodule, branch main)
-├── hosts/     -> git@github.com:GrimOutlook/nix-hosts     (submodule, branch main)
-├── homelab/   -> git@github.com:GrimOutlook/nix-homelab   (submodule, branch main)
-├── JUSTFILE   -> top-level task runner (update/deploy/ssh/git helpers across all hosts)
-└── README.md
-```
+## Workflow
 
-Each submodule is its own repo with its own git history/remote — `cd` into it
-and use git normally. Running `just pull` at the top level pulls all three and
-checks out `main`; `just push` pushes all three (`git submodule foreach --recursive`).
+- Check existing just recipes before writing ad hoc lifecycle commands.
+- Use top-level `just eval-host HOST`, `just eval-fleet`, `just build-host HOST`,
+  and `just deploy HOST [ADDR]` for the consolidated fleet.
+- Local evaluation/build overrides the config input with adjacent `config/`.
+  Deployment uses homelab's published, locked config input.
+- Publish config first, run `just --justfile homelab/JUSTFILE update nix-config`,
+  review the lockfile, then publish homelab before deployment. Consult
+  `config/PUBLIC_PRIVATE_SPLIT.md` before publication or activation.
+- Each submodule has its own history and remote. Commit/push changed submodules
+  before recording their pointers in this wrapper. Preserve unrelated work.
+- Secrets are managed with agenix. Inspect applicable recipient rules and host
+  modules when changing secrets.
+- SSH root login is disabled. Deployment uses the restricted `deploy` account
+  and limited NOPASSWD sudo-rs for activation. Bootstrap via existing root/admin
+  access. Newyork's sshd listens on port 49999.
+- Paris is a local rebuild: `sudo nixos-rebuild switch --flake ./homelab#paris`.
+- Dubai is maintained externally and excluded from the managed fleet.
 
-### `config/` — nix-config
+Managed systems: amsterdam, berlin, dunkirk, macao, newyork, oslo, paris,
+svalbard, and washington. London is a MicroVM on Amsterdam.
 
-Shared NixOS/home-manager modules, structured "dendritic style" (based on
-github.com/GaetanLepage/nix-config): every `default.nix` under a directory is
-auto-imported via `import-tree`, so directory layout == module tree, no manual
-import lists to maintain.
-
-- `flake/` — flake-parts glue: `modules.nix` wires up `capabilities/` +
-  `host-types/` into `nixosModules.default`; `host.nix` defines the `host.*`
-  option namespace; `devshell.nix` defines `just`-like devshell commands
-  (`update`, `switch`, `unlink-results`); `deploy-rs.nix` provides the deployment
-  tool, while `lib.mkFleetDeploy` assembles private nodes; `systems.nix` lists
-  supported systems.
-- `capabilities/` — reusable, composable feature modules grouped by domain:
-  `core` (applies to every host: users, nix settings, ssh, networking, agenix,
-  etc.), `dev`, `graphical`, `misc`, `network-diag`, `virtualization`. Each
-  capability is toggled via `host.<capability>.enable`.
-- `host-types/` — one module per machine class (`desktop`, `laptop`, `pi`,
-  `server`, `vm`, `wsl`), each enabling a bundle of capabilities. Toggled via
-  `host.type.<type>.enable`. Individual hosts set exactly one of these.
-
-### `hosts/` — nix-hosts
-
-Contains the actual flake for every physical/virtual machine, one directory
-per hostname. Each host directory is normally its own flake pulling in
-`nix-config` (and `nix-homelab` if it needs homelab service/network info) plus
-host-specific hardware/service modules. See the host registry below.
-
-`hosts/JUSTFILE` drives per-host lifecycle: `just update HOST`, `just deploy
-HOST [ADDR]` (uses `nh os switch` over SSH), `just deploy-new HOST [ADDR]`
-(first install via nixos-anywhere), `just deploy-update HOST`, `just
-update-all`.
-
-### `homelab/` — nix-homelab
-
-Single source of truth for the home network: `hosts.nix` declares every
-homelab-relevant host (IP/MAC, and the services it runs with port
-numbers/subdomains/public-exposure flags), consumed by hosts via the
-`homelab` flake input (e.g. `homelab.hosts.<name>.services.<svc>.ports.*`).
-`modules/lib.nix` and `modules/helpers.nix` provide the IP/port
-auto-assignment and lookup helpers; `modules/ssh_config.nix` generates SSH
-host entries for home-manager.
-
-`homelab/JUSTFILE` provides the consolidated update, evaluation, build, and
-deployment recipes for the managed fleet.
-
-**Note:** `homelab/hosts.nix` in this checkout can lag its own `origin/main`
-(submodule pointers aren't always bumped promptly) — if a host's expected
-`homelab.hosts.<name>` entry seems missing, check `git -C homelab log
-HEAD..origin/main` before assuming it doesn't exist upstream.
-
-## Host registry (as of this checkout)
-
-| Host | Type | Purpose | Notes |
-| --- | --- | --- | --- |
-| amsterdam | server | Public web service host / hypervisor (plex) | Runs the `vikunja` and `london` MicroVMs via microvm.nix — see `hosts/amsterdam/README.md` and `modules/vms/` |
-| berlin | desktop | Personal desktop (Nix boot) | |
-| london | *(removed)* | Was a physical media downloader; the `hosts/london` submodule was **removed**. Recreated as a VPN-isolated podman/Buildarr MicroVM on **amsterdam** (`hosts/amsterdam/modules/vms/london/`). Its `homelab.hosts.london` entry is kept — the VM reads its service ports from there. |
-| macao | desktop | Living-room gaming PC / "Steam Machine" | uses its own `.just/` justfile modules |
-| newyork | server | Router/firewall (dnsmasq, ddclient, glance, vnstat) | homelab gateway host |
-| oslo | server | Local backups host | enables `nix-config`'s `host.backup` capability |
-| paris | laptop | Personal laptop (Nix boot) | |
-| dunkirk | server | Security NVR (frigate, active cameras: front-door, driveway, back-gate; Coral TPU; ZFS raidz3 pool) | `arm build` + `network-diag` enabled |
-| svalbard | server | Remote backups host | enables `nix-config`'s `host.backup` capability |
-| washington | server | Public web service host (plex, vaultwarden) | |
-
-Dubai is maintained externally and is excluded from the active fleet, inventory,
-public profiles, installer targets, monitoring targets, and secret recipient rules.
-Its old checkout under `hosts/` is legacy comparison material, not a managed host.
-
-## Conventions / gotchas
-
-- Everything is driven by `just`. Check for a `JUSTFILE` before writing ad hoc
-  shell commands — most host/update/deploy/git workflows already have a
-  recipe (top-level, `hosts/`, `homelab/`, and per-host like `macao/.just/`).
-- Capabilities and host-types are enabled through the `host.*` NixOS option
-  namespace defined in `config/flake/host.nix` — grep for `host.type.*.enable`
-  or `host.<capability>.enable` to see what a given host actually turns on,
-  rather than inferring from file presence alone.
-- Secrets are managed with `agenix` (see `*/secrets/*.age` + `secrets.nix`
-  per host, e.g. `hosts/dunkirk/secrets/`).
-- Per-host READMEs occasionally get copy-pasted from another host when
-  scaffolding a new one and not updated — cross-check a host's README against
-  its actual `modules/`/`services/` before trusting it.
-- **Deployment uses homelab's published `nix-config` input.** Publish config,
-  then run `just --justfile homelab/JUSTFILE update nix-config`, review the
-  consolidated lock, and publish homelab before deployment. Local evaluation
-  and `build-host` deliberately override it with adjacent `config/` changes.
-- **Pushing spans nested submodules** — push **leaves first**
-  (`hosts/<host>`), then `hosts`, then the superproject, so parent pointer
-  bumps reference already-pushed commits. `git push` is fast-forward-only, so a
-  wrong order just fails safely.
-- **amsterdam builds Vikunja from the `GrimOutlook/vikunja` GitHub fork** (a
-  `git+https://` input). A nixpkgs bump that changes pnpm or Go invalidates the
-  two pinned FOD hashes in that repository's `flake.nix` (the frontend
-  `pnpm-deps` `hash` and the Go `vendorHash`); the amsterdam build then fails
-  with "hash mismatch". Fix: set each to the reported `got:` value, commit and
-  push the fork, then `nix flake update vikunja` in `hosts/amsterdam`.
-- **SSH root login is disabled** (see `nix-config`
-  `capabilities/core/ssh-server.nix`). Fleet deployment uses the restricted
-  `deploy` account and root only for the NixOS system profile via limited
-  NOPASSWD sudo-rs. Bootstrap a host over its existing root/admin path before
-  applying this configuration. `newyork`'s sshd is on **port 49999** (22 is a
-  reject tar pit).
+Verify host services and settings against current profiles, private modules,
+and inventory rather than historical descriptions.

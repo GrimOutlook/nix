@@ -1,284 +1,48 @@
 # Nix
 
-## Public/private split workflow
+This wrapper holds two independent Git submodules and a shared `JUSTFILE`.
+It is not itself a Nix flake.
 
-The split is merged on both submodules' `main` branches. `config/` contains public
-modules and reviewed host profiles, and `homelab/` contains private inventory,
-hardware, secrets, host composition and the single fleet lockfile. `hosts/` is
-the legacy checkout retained for comparison and unfinished local work.
+| Path | Purpose |
+| --- | --- |
+| [`config/`](./config/) | Public NixOS/Home Manager modules and host profiles |
+| [`homelab/`](./homelab/) | Private inventory, hardware, secrets, host composition, and the fleet lockfile |
+| [`JUSTFILE`](./JUSTFILE) | Shared evaluation, build, update, deploy, SSH, and Git helpers |
 
-Use these commands from the wrapper:
+Initialize the repositories with `git submodule update --init --recursive`.
+The active fleet is defined in `homelab/flake.nix` and `homelab/fleet.nix`.
+Public host profiles live in `config/hosts/`; private modules live in
+`homelab/hosts/`.
+
+## Fleet workflow
 
 ```sh
-just eval-host berlin         # Evaluate with adjacent unpublished config
-just eval-fleet               # Evaluate nine systems, one process per host
-just build-host berlin        # Build with adjacent config, without activation
-just update-all               # Update the consolidated fleet lockfile
-just deploy newyork           # Deploy the published locked fleet as deploy
-just deploy-new HOST [ADDR]   # Install from homelab's consolidated flake
+just --list                  # List wrapper recipes
+just eval-host berlin        # Evaluate with adjacent unpublished config
+just eval-fleet              # Evaluate the consolidated fleet
+just build-host berlin       # Build with adjacent config, without activation
+just update-all              # Update the consolidated fleet lockfile
+just deploy newyork          # Deploy the published locked fleet as deploy
+just deploy-new HOST [ADDR]  # Install from homelab's consolidated flake
+just connect HOST            # Open an SSH session as grim
+just pull                    # Pull main in the wrapper and submodules
 ```
 
 `just update HOST` is a compatibility entry point that updates the shared fleet
-lockfile; dependencies are no longer pinned separately for each host.
-For a targeted input update, use `just --justfile homelab/JUSTFILE update INPUT`.
-Review updates before deployment. Deployment intentionally uses the published
-lockfile rather than the local config override used by evaluation/build recipes.
-Paris remains a local rebuild: `sudo nixos-rebuild switch --flake ./homelab#paris`.
+lockfile. For a targeted input update, use
+`just --justfile homelab/JUSTFILE update INPUT`.
 
-Publish config first, update homelab's config input, then publish homelab and
-update the wrapper pointers. Homelab now pins the merged config main revision,
-with no evaluation-branch URL or local path input in its lockfile. See
+Deployment uses the published locked config input; local evaluation/build uses
+adjacent `config/` changes. Paris is rebuilt locally with
+`sudo nixos-rebuild switch --flake ./homelab#paris`.
+
+## Publishing changes
+
+1. Commit and push changes in `config/`.
+2. Run `just --justfile homelab/JUSTFILE update nix-config` and review the lockfile.
+3. Commit and push changes in `homelab/`.
+4. Commit the updated submodule pointers in this wrapper and push it.
+
+Check each repository's status before staging changes. Consult
 [`config/PUBLIC_PRIVATE_SPLIT.md`](./config/PUBLIC_PRIVATE_SPLIT.md) and
-[`homelab/SITE_SPLIT.md`](./homelab/SITE_SPLIT.md) for migration gates.
-
-## Legacy layout and workflows
-
-The sections below describe the pre-split checkout for comparison. Use the
-workflow above for the consolidated fleet.
-
-This is an umbrella checkout for the NixOS configuration used across the
-fleet. It is not itself a Nix flake. The actual flakes live in the three Git
-submodules below, each with its own repository, history, lock file, and remote.
-
-## Repository Layout
-
-| Path | Repository | Purpose |
-| --- | --- | --- |
-| [`config/`](./config/) | [nix-config](https://github.com/GrimOutlook/nix-config) | Shared NixOS and Home Manager modules |
-| [`hosts/`](./hosts/) | [nix-hosts](https://github.com/GrimOutlook/nix-hosts) | Host flakes and the deploy-rs fleet aggregator |
-| [`homelab/`](./homelab/) | [nix-homelab](https://github.com/GrimOutlook/nix-homelab) | Shared homelab metadata consumed by host flakes |
-| [`JUSTFILE`](./JUSTFILE) | This repository | Shared update, deploy, SSH, and Git helpers |
-
-Initialize all nested repositories after cloning:
-
-```sh
-git submodule update --init --recursive
-```
-
-Each submodule is an independent Git repository. Changes must be committed and
-pushed from the leaf repository first, then its parent submodule repository,
-then this top-level repository.
-
-## How It Works
-
-### Shared Configuration
-
-`config/` uses a dendritic module layout. `import-tree` automatically imports
-the module tree, so directory structure is the module composition rather than
-a manually maintained import list.
-
-- `capabilities/` contains reusable features such as security, agenix,
-  graphical support, development tools, virtualization, and monitoring.
-- `host-types/` defines bundles for desktops, laptops, servers, VMs, Pis, and
-  WSL systems.
-- Hosts enable features through the `host.*` option namespace and normally set
-  exactly one `host.type.*.enable` option.
-- Shared modules configure both NixOS and Home Manager where appropriate.
-- The default package set is Determinate's chilled NixOS 26.05 mirror. Packages
-  that need the current upstream revision can opt into the matching realtime
-  mirror with `host.nix.realtimePackages`.
-
-### Host Flakes
-
-Every directory under `hosts/` is normally its own flake. A host flake imports
-`nix-config` and, where needed, `nix-homelab`, then adds hardware and
-host-specific service modules. The host's own `flake.lock` pins those inputs.
-
-The [`hosts/flake.nix`](./hosts/flake.nix) flake is a separate fleet
-aggregator. It imports the individual host flakes and exposes their NixOS
-systems through `deploy.nodes` for deploy-rs.
-
-### Inputs and Locks
-
-At build time, a host uses the `nix-config` and `nix-homelab` revisions in its
-own lock file. The local `config/` and `homelab/` submodules are convenient
-checkouts, but changing their parent pointers alone does not change a host
-build.
-
-When shared configuration changes:
-
-1. Commit and push `config/` or `homelab/`.
-2. Update the affected host lock files to the new input revision.
-3. Update the corresponding inputs in `hosts/flake.lock` if deploying through
-   the fleet aggregator.
-4. Commit and push the host repositories, then the `hosts/` parent, then this
-   repository.
-
-Secrets are managed with agenix. Encrypted files live in host `secrets/`
-directories and are decrypted only on systems that have the corresponding
-identity.
-
-## Host Registry
-
-These are the host flakes currently present in `hosts/`:
-
-| Host | Type | Purpose |
-| --- | --- | --- |
-| [amsterdam](./hosts/amsterdam/) | Server | Public services, Plex, and the MicroVM host for Vikunja and `london` |
-| [berlin](./hosts/berlin/) | Desktop | Personal desktop, booted with NixOS |
-| [dunkirk](./hosts/dunkirk/) | Server | Frigate security NVR with Coral TPU and ZFS |
-| [macao](./hosts/macao/) | Desktop | Living-room gaming PC / Steam Machine |
-| [newyork](./hosts/newyork/) | Server | Homelab infrastructure host |
-| [oslo](./hosts/oslo/) | Server | Local backup host |
-| [paris](./hosts/paris/) | Laptop | Personal laptop, booted with NixOS |
-| [svalbard](./hosts/svalbard/) | Server | Remote backup host |
-| [washington](./hosts/washington/) | Server | Public web services, Plex, and Vaultwarden |
-
-`london` is not a standalone host repository anymore. It is a MicroVM defined
-under [`hosts/amsterdam/modules/vms/london/`](./hosts/amsterdam/modules/vms/london/).
-
-## Common Workflows
-
-List available recipes from the top-level checkout:
-
-```sh
-just --list
-```
-
-Common recipes are:
-
-```sh
-just pull                    # Pull main in the top-level repo and submodules
-just check HOST              # Check one host flake
-just update HOST             # Update one host's flake inputs
-just deploy HOST [ADDR]      # Deploy with nh over SSH
-just deploy-update HOST      # Update and deploy one host
-just deploy-new HOST [ADDR]  # First install with nixos-anywhere
-just connect HOST            # Open an SSH session as grim
-```
-
-The `just deploy` recipes are the older direct `nh os switch` path. For
-rollback-protected fleet deployments, use the deploy-rs workflow below.
-
-For homelab-wide input updates, run the recipes in `hosts/JUSTFILE`:
-
-```sh
-cd hosts
-just --list
-just update-homelab-flakes nix-config
-```
-
-Review generated lock-file changes before committing. Do not use a broad
-recursive Git command to stage changes when another host or submodule has
-unrelated work in progress.
-
-## Deploying With deploy-rs
-
-### Supported Entry Point
-
-Use the fleet aggregator in `hosts/`. It defines a `system` profile running as
-`root`, with deploy-rs magic rollback and automatic rollback enabled. SSH
-connects as the restricted `deploy` user from private LAN/VPN addresses;
-passwordless sudo-rs is limited to the deploy-rs activation and rollback
-commands through a fixed validation bridge.
-
-The deployment-client option is enabled by default, but the private key is
-installed only on hosts with `host.dev.enable` (currently Berlin and Paris).
-The first rollout must therefore use each host's existing root or console
-access once; that generation creates the `deploy` account before root SSH is
-disabled.
-
-The deploy-rs executable should come from nixpkgs, where it is available from
-the binary cache:
-
-```sh
-# On Berlin or Paris, after the host has received the agenix secret
-ssh-add /run/agenix/nix-deploy-key
-
-# From the top-level repository
-nix run ./hosts -- .#newyork
-
-# Equivalent, from inside the fleet aggregator
-cd hosts
-nix run . -- .#newyork
-```
-
-Do not invoke the deploy-rs binary directly for this checkout. The fleet
-wrapper runs the cached nixpkgs deploy-rs executable with the `deploy` SSH
-user; the encrypted key is unlocked once in `ssh-agent`.
-
-### Nodes
-
-The fleet aggregator currently exposes these deploy-rs nodes:
-
-```text
-amsterdam  berlin  dunkirk  macao  newyork  oslo  svalbard  washington
-```
-
-`paris` is intentionally not a deploy-rs node because it is the laptop from
-which deployments are normally driven. Rebuild it locally instead:
-
-```sh
-run0 nixos-rebuild switch --flake ./hosts/paris#paris
-```
-
-The default build behavior is remote build on the target followed by remote
-activation. `newyork` is the only exception: it sets `remoteBuild = false`
-because the router is not powerful enough to be a useful build host.
-
-### Safe Deployment Sequence
-
-Before deploying a host repository change, refresh that host's input in the
-aggregator. The aggregator has its own `flake.lock`, so it otherwise deploys
-the host revision already pinned there:
-
-```sh
-cd hosts
-nix flake update newyork
-nix flake check --no-build --no-write-lock-file
-nix run . -- --dry-activate .#newyork
-nix run . -- .#newyork
-```
-
-Replace `newyork` with any supported node. Use `--targets` to deploy more than
-one node in one invocation:
-
-```sh
-nix run . -- --targets .#newyork .#svalbard
-```
-
-Use `nix run . -- .` to deploy every enabled fleet node in one invocation.
-
-`--dry-activate` builds and reports the activation without applying it.
-deploy-rs also supports `--boot` when the next generation should be selected
-on reboot without switching immediately.
-
-### Rollback Behavior
-
-- `magicRollback` waits for deploy-rs to reconnect after activation. If the
-  host does not become reachable, it rolls back automatically.
-- Confirmation timeout is 120 seconds for `newyork` and `svalbard`, and 30
-  seconds for the other nodes.
-- Verify configured SSH access to the target before deploying. The fleet uses
-  `deploy` for SSH and `root` only for the NixOS system profile, so the deploy
-  key must be loaded in `ssh-agent`.
-
-If schema or check evaluation fails because a required package is not yet in
-the local store, allow Nix to substitute or build it and rerun the checks. Use
-`--skip-checks` only as an intentional emergency override; it bypasses the
-pre-deployment validation.
-
-The shared config also contains an incomplete per-host deploy-rs module. It is
-not the supported fleet entry point; use `hosts/flake.nix` as described above.
-
-## Publishing Changes
-
-Because this checkout contains nested Git repositories, publish from the leaves
-outward:
-
-1. Commit and push the changed host repository or shared repository.
-2. Commit and push the updated submodule pointer and lock file in `hosts/`.
-3. Commit and push the updated `hosts/` pointer in this repository.
-
-The same ordering applies to the `config/` and `homelab/` submodules. Check
-each repository independently with `git status` before staging or committing.
-
-## Resources
-
-- [NixOS Packages and Options](https://search.nixos.org/packages?channel=26.05)
-- [NixOS Manual](https://nixos.org/manual/nixos/stable/)
-- [Home Manager Options](https://home-manager-options.extranix.com/)
-- [Nixvim Options](https://nix-community.github.io/nixvim/26.05/index.html)
-- [deploy-rs](https://github.com/serokell/deploy-rs)
-- [nixos-anywhere](https://github.com/nix-community/nixos-anywhere)
-- [NixOS Virtual Machines](https://nix.dev/tutorials/nixos/nixos-configuration-on-vm)
+[`homelab/SITE_SPLIT.md`](./homelab/SITE_SPLIT.md) before publication or activation.

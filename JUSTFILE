@@ -1,8 +1,3 @@
-# URL to pull flake for a given host
-FLAKE_STUB := "git+ssh://git@github.com/GrimOutlook/nix-host-"
-# Hosts directory
-HOSTS := "hosts"
-
 # List all `just` tasks
 default:
   just --list
@@ -65,18 +60,6 @@ connect HOST:
 [group('ssh')]
 clear-keys HOST:
   ssh-keygen -R {{HOST}}
-
-# Commit flake update for single host
-[group('git')]
-commit-host-update HOST:
-  git -C {{HOSTS}}/{{HOST}} commit -am "chore: Update flake.lock" && git push || true
-  git -C {{HOSTS}} commit -am "chore: Update \`{{HOST}}\` flake.lock" && git push || true
-
-# Commit flake update for host to the hosts repo
-[group('git')]
-commit-hosts-update:
-  git -C {{HOSTS}} commit -am "chore: Update flake.lock for hosts" && git push || true
-  git commit -am "chore: Update flake.lock for hosts" && git push || true
 
 # Push changes for all contained repos
 [group('git')]
